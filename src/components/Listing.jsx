@@ -1,14 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaMapMarker } from 'react-icons/fa'
 
 const Listing = ({ job }) => {
+  const [checkDescriptionLenght, setCheckDescriptionLenght] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
 
   let description = job.description
 
-  if (!showFullDescription) {
-    description = description.substring(0, 100) + '...'
+  useEffect(() => {
+    if (job.description.length >= 100) {
+      setCheckDescriptionLenght(true)
+    }
+  }, [])
+
+  if (!showFullDescription && checkDescriptionLenght) {
+    description = description.substring(0, 99) + '...'
   }
 
   return (
@@ -20,12 +27,14 @@ const Listing = ({ job }) => {
         </div>
 
         <div className='mb-4'>{description}</div>
-        <button
-          className='text-indigo-500 mb-5 hover:text-indigo-600'
-          onClick={() => setShowFullDescription((prevState) => !prevState)}
-        >
-          Show {showFullDescription ? 'Less' : 'More'}
-        </button>
+        {checkDescriptionLenght && (
+          <button
+            className='text-indigo-500 mb-5 hover:text-indigo-600'
+            onClick={() => setShowFullDescription((prevState) => !prevState)}
+          >
+            Show {showFullDescription ? 'Less' : 'More'}
+          </button>
+        )}
 
         <h3 className='text-indigo-500 mb-2'>{job.salary} / Year</h3>
 

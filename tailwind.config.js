@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Roboto', 'sans-serif'],
+        sans: ['Segoe UI Emoji', 'Segoe UI Symbol', 'sans-serif'],
       },
       gridTemplateColumns: {
         '70/30': '70% 28%',
