@@ -1,6 +1,9 @@
 import { useLoaderData, Link, useNavigate } from 'react-router-dom'
 import { FaArrowLeft, FaMapMarker } from 'react-icons/fa'
 
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../firebase'
+
 const JobPage = ({ deleteJob }) => {
   const navigate = useNavigate()
 
@@ -103,9 +106,36 @@ const JobPage = ({ deleteJob }) => {
 }
 
 const jobLoader = async ({ params }) => {
-  const response = await fetch(`/api/jobs/${params.id}`)
-  const data = await response.json()
-  return data
+  // const response = await fetch(`/api/jobs/${params.id}`)
+  // const data = await response.json()
+  // return data
+
+  try {
+    // Construct a reference to the job document
+    const jobRef = doc(db, 'jobs', params.id)
+
+    // Retrieve the job document
+    const jobSnapshot = await getDoc(jobRef)
+
+    // Check if the job document exists
+    if (jobSnapshot.exists()) {
+      // Extract data from the job document
+      const jobData = jobSnapshot.data()
+
+      // Add the ID to the job data
+      jobData.id = jobSnapshot.id
+
+      // Return the job data
+      return jobData
+    } else {
+      // Handle the case where the job document does not exist
+      console.log('Job not found')
+      return null
+    }
+  } catch (error) {
+    console.error('Error fetching job: ', error)
+    throw error // Throw the error for handling elsewhere, if needed
+  }
 }
 
 export { JobPage as default, jobLoader }

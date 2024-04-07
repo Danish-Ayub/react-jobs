@@ -2,20 +2,41 @@ import { useState, useEffect } from 'react'
 import Listing from './Listing'
 import Spinner from './Spinner'
 
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '../firebase'
+
 const JobListings = ({ isHome = false }) => {
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchJobs = async () => {
-      const apiUrl = isHome ? '/api/jobs?_limit=3' : '/api/jobs'
+      // const apiUrl = isHome ? '/api/jobs?_limit=3' : '/api/jobs'
+      // try {
+      //   const response = await fetch(apiUrl)
+      //   const data = await response.json()
+      //   setJobs(data)
+      // } catch (err) {
+      //   console.log(err)
+      // } finally {
+      //   setLoading(false)
+      // }
 
       try {
-        const response = await fetch(apiUrl)
-        const data = await response.json()
-        setJobs(data)
-      } catch (err) {
-        console.log(err)
+        const querySnapshot = await getDocs(collection(db, 'jobs'))
+        const data = []
+
+        querySnapshot.forEach((doc) => {
+          data.push({
+            id: doc.id,
+            ...doc.data(),
+          })
+        })
+
+        return setJobs(data)
+      } catch (error) {
+        console.error('Error fetching jobs: ', error)
+        return [] // Return an empty array in case of error
       } finally {
         setLoading(false)
       }
