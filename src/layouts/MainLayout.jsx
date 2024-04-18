@@ -3,10 +3,10 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Nav from '../components/Nav'
 
-const MainLayout = () => {
+const MainLayout = ({ checkUser, userInfo }) => {
   return (
     <>
-      <Nav />
+      <Nav checkUser={checkUser} userInfo={userInfo} />
       <Outlet />
 
       <ToastContainer />

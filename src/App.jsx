@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Route,
   createBrowserRouter,
@@ -14,7 +14,6 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  Timestamp,
 } from 'firebase/firestore'
 import { toast } from 'react-toastify'
 import MainLayout from './layouts/MainLayout'
@@ -27,9 +26,25 @@ import AuthPage from './pages/AuthPage'
 import NotFoundPage from './pages/NotFoundPage'
 
 const App = () => {
+  const [checkUser, setCheckUser] = useState(false)
+  const [userInfo, setUserInfo] = useState(null)
+  const auth = getAuth()
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCheckUser(true)
+        setUserInfo(user)
+      } else {
+        setCheckUser(false)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [auth])
+
   const AuthRedirect = ({ element, condition }) => {
     const navigate = useNavigate()
-    const auth = getAuth()
 
     useEffect(() => {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -50,15 +65,7 @@ const App = () => {
   // add new job
   const addJob = async (newJob) => {
     try {
-      // await addDoc(collection(db, 'jobs'), newJob)
-
-      const timestamp = Timestamp.now()
-      const jobWithTimestamp = {
-        ...newJob,
-        createdAt: timestamp,
-      }
-      // Add the document to the 'jobs' collection with the timestamp
-      const docRef = await addDoc(collection(db, 'jobs'), jobWithTimestamp)
+      await addDoc(collection(db, 'jobs'), newJob)
 
       toast.success('Job added successfully')
     } catch (error) {
@@ -95,12 +102,15 @@ const App = () => {
 
   const router = createBrowserRouter(
     createRoutesFromElements(
-      <Route path='/' element={<MainLayout />}>
+      <Route
+        path='/'
+        element={<MainLayout checkUser={checkUser} userInfo={userInfo} />}
+      >
         <Route index element={<Home />} />
         <Route path='/jobs' element={<JobsPage />} />
         <Route
           path='/jobs/:id'
-          element={<JobPage deleteJob={deleteJob} />}
+          element={<JobPage deleteJob={deleteJob} checkUser={checkUser} />}
           loader={jobLoader}
         />
         <Route

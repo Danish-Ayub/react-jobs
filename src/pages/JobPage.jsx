@@ -4,7 +4,7 @@ import { FaArrowLeft, FaMapMarker } from 'react-icons/fa'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 
-const JobPage = ({ deleteJob }) => {
+const JobPage = ({ deleteJob, checkUser }) => {
   const navigate = useNavigate()
 
   const job = useLoaderData()
@@ -84,18 +84,29 @@ const JobPage = ({ deleteJob }) => {
 
               <div className='bg-white p-6 rounded-lg shadow-md mt-6'>
                 <h3 className='text-xl font-bold mb-6'>Manage Job</h3>
-                <Link
-                  to={`/jobs-edit/${job.id}`}
-                  className='bg-indigo-500 hover:bg-indigo-600 text-white text-center font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block'
-                >
-                  Edit Job
-                </Link>
-                <button
-                  className='bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block'
-                  onClick={() => deleteJobHandler(job.id)}
-                >
-                  Delete Job
-                </button>
+                {checkUser === true ? (
+                  <>
+                    <Link
+                      to={`/jobs-edit/${job.id}`}
+                      className='bg-indigo-500 hover:bg-indigo-600 text-white text-center font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block'
+                    >
+                      Edit Job
+                    </Link>
+                    <button
+                      className='bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-4 block'
+                      onClick={() => deleteJobHandler(job.id)}
+                    >
+                      Delete Job
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to='/sign-in'
+                    className='block text-center bg-black text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2'
+                  >
+                    Sign In
+                  </Link>
+                )}
               </div>
             </aside>
           </div>
@@ -106,35 +117,22 @@ const JobPage = ({ deleteJob }) => {
 }
 
 const jobLoader = async ({ params }) => {
-  // const response = await fetch(`/api/jobs/${params.id}`)
-  // const data = await response.json()
-  // return data
-
   try {
-    // Construct a reference to the job document
     const jobRef = doc(db, 'jobs', params.id)
-
-    // Retrieve the job document
     const jobSnapshot = await getDoc(jobRef)
 
-    // Check if the job document exists
     if (jobSnapshot.exists()) {
-      // Extract data from the job document
       const jobData = jobSnapshot.data()
 
-      // Add the ID to the job data
       jobData.id = jobSnapshot.id
 
-      // Return the job data
       return jobData
     } else {
-      // Handle the case where the job document does not exist
       console.log('Job not found')
       return null
     }
   } catch (error) {
     console.error('Error fetching job: ', error)
-    throw error // Throw the error for handling elsewhere, if needed
   }
 }
 

@@ -4,24 +4,8 @@ import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
 import logo from '../assets/images/logo.png'
 import avatar from '../assets/images/avatar.png'
 
-const Nav = () => {
-  const [checkUser, setCheckUser] = useState(false)
-  const [userInfo, setUserInfo] = useState(null)
+const Nav = ({ checkUser, userInfo }) => {
   const navigate = useNavigate()
-
-  const auth = getAuth()
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCheckUser(true)
-        setUserInfo(user)
-      } else {
-        setCheckUser(false)
-      }
-    })
-
-    return () => unsubscribe()
-  }, [auth])
 
   const handleLogout = async () => {
     try {
