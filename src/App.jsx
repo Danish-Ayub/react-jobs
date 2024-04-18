@@ -1,49 +1,64 @@
+import { useEffect } from 'react'
 import {
   Route,
   createBrowserRouter,
   createRoutesFromElements,
   RouterProvider,
+  useNavigate,
 } from 'react-router-dom'
-import MainLayout from './layouts/MainLayout'
-import Home from './pages/Home'
-import JobsPage from './pages/JobsPage'
-import JobPage, { jobLoader } from './pages/JobPage'
-import AddJobPage from './pages/AddJobPage'
-import EditJobPage from './pages/EditJobPage'
-import NotFoundPage from './pages/NotFoundPage'
-import { toast } from 'react-toastify'
 import { db } from './firebase'
+import { getAuth, onAuthStateChanged } from 'firebase/auth'
 import {
   doc,
   collection,
   addDoc,
   updateDoc,
   deleteDoc,
-  getDocs,
+  Timestamp,
 } from 'firebase/firestore'
+import { toast } from 'react-toastify'
+import MainLayout from './layouts/MainLayout'
+import Home from './pages/Home'
+import JobsPage from './pages/JobsPage'
+import JobPage, { jobLoader } from './pages/JobPage'
+import AddJobPage from './pages/AddJobPage'
+import EditJobPage from './pages/EditJobPage'
+import AuthPage from './pages/AuthPage'
+import NotFoundPage from './pages/NotFoundPage'
 
 const App = () => {
-  const reacting = async () => {
-    // const docRef = await addDoc(collection(db, 'jobs'), newJob)
-    const querySnapshot = await getDocs(collection(db, 'jobs'))
-    const updatedJobs = querySnapshot.docs.map((doc) => doc.data())
-    console.log(querySnapshot)
+  const AuthRedirect = ({ element, condition }) => {
+    const navigate = useNavigate()
+    const auth = getAuth()
+
+    useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user && condition) {
+          navigate('/', { replace: true })
+        } else if (!user && !condition) {
+          navigate('/sign-in', { replace: true })
+        }
+      })
+
+      return () => unsubscribe()
+    }, [auth, navigate, condition])
+
+    // Render the provided element regardless of user authentication status
+    return element
   }
 
   // add new job
   const addJob = async (newJob) => {
-    // const response = await fetch('/api/jobs', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(newJob),
-    // })
-
     try {
-      const docRef = await addDoc(collection(db, 'jobs'), newJob)
-      const querySnapshot = await getDocs(collection(db, 'jobs'))
-      const updatedJobs = querySnapshot.docs.map((doc) => doc.data())
+      // await addDoc(collection(db, 'jobs'), newJob)
+
+      const timestamp = Timestamp.now()
+      const jobWithTimestamp = {
+        ...newJob,
+        createdAt: timestamp,
+      }
+      // Add the document to the 'jobs' collection with the timestamp
+      const docRef = await addDoc(collection(db, 'jobs'), jobWithTimestamp)
 
       toast.success('Job added successfully')
     } catch (error) {
@@ -52,33 +67,8 @@ const App = () => {
     }
   }
 
-  // delete job
-  const deleteJob = async (id) => {
-    // const response = await fetch(`/api/jobs/${id}`, {
-    //   method: 'DELETE',
-    // })
-
-    try {
-      const jobRef = doc(db, 'jobs', id)
-      await deleteDoc(jobRef)
-
-      return toast.success('Job deleted successfully')
-    } catch (error) {
-      console.error('Error deleting job: ', error)
-      toast.error('Failed to delete job')
-    }
-  }
-
   // update job
   const updateJob = async (job) => {
-    // const response = await fetch(`/api/jobs/${job.id}`, {
-    //   method: 'PUT',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //   },
-    //   body: JSON.stringify(job),
-    // })
-
     try {
       const jobRef = doc(db, 'jobs', job.id)
       await updateDoc(jobRef, job)
@@ -87,6 +77,19 @@ const App = () => {
     } catch (error) {
       console.error('Error updating job: ', error)
       toast.error('Failed to edit job')
+    }
+  }
+
+  // delete job
+  const deleteJob = async (id) => {
+    try {
+      const jobRef = doc(db, 'jobs', id)
+      await deleteDoc(jobRef)
+
+      return toast.success('Job deleted successfully')
+    } catch (error) {
+      console.error('Error deleting job: ', error)
+      toast.error('Failed to delete job')
     }
   }
 
@@ -100,23 +103,34 @@ const App = () => {
           element={<JobPage deleteJob={deleteJob} />}
           loader={jobLoader}
         />
-        <Route path='/add-job' element={<AddJobPage addJobSubmit={addJob} />} />
+        <Route
+          path='/add-job'
+          element={
+            <AuthRedirect
+              element={<AddJobPage addJobSubmit={addJob} />}
+              condition={false}
+            />
+          }
+        />
         <Route
           path='/jobs-edit/:id'
           element={<EditJobPage updateJobSubmit={updateJob} />}
           loader={jobLoader}
+        />
+        <Route
+          path='/sign-in'
+          element={<AuthRedirect element={<AuthPage />} condition={true} />}
+        />
+        <Route
+          path='/sign-up'
+          element={<AuthRedirect element={<AuthPage />} condition={true} />}
         />
         <Route path='*' element={<NotFoundPage />} />
       </Route>
     )
   )
 
-  return (
-    <>
-      <RouterProvider router={router} />
-      <button onClick={reacting}>Reacting</button>
-    </>
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App

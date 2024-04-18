@@ -1,7 +1,38 @@
-import { NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth'
 import logo from '../assets/images/logo.png'
+import avatar from '../assets/images/avatar.png'
 
 const Nav = () => {
+  const [checkUser, setCheckUser] = useState(false)
+  const [userInfo, setUserInfo] = useState(null)
+  const navigate = useNavigate()
+
+  const auth = getAuth()
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCheckUser(true)
+        setUserInfo(user)
+      } else {
+        setCheckUser(false)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [auth])
+
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth()
+      await signOut(auth)
+      navigate('/')
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   const linkClass = ({ isActive }) =>
     isActive
       ? 'bg-black text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2'
@@ -26,9 +57,32 @@ const Nav = () => {
                 <NavLink to='/jobs' className={linkClass}>
                   Jobs
                 </NavLink>
-                <NavLink to='/add-job' className={linkClass}>
-                  Add Job
-                </NavLink>
+                {checkUser && (
+                  <NavLink to='/add-job' className={linkClass}>
+                    Add Job
+                  </NavLink>
+                )}
+                {!checkUser ? (
+                  <NavLink to='/sign-in' className={linkClass}>
+                    Sign In
+                  </NavLink>
+                ) : (
+                  <>
+                    <img
+                      className='w-10 h-10 rounded-full'
+                      src={
+                        userInfo.photoURL === null ? avatar : userInfo.photoURL
+                      }
+                      alt='avatar'
+                    />
+                    <button
+                      className='text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2'
+                      onClick={handleLogout}
+                    >
+                      Log Out
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

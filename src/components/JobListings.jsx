@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
 import Listing from './Listing'
 import Spinner from './Spinner'
-
-import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
+import { collection, getDocs, query, limit, orderBy } from 'firebase/firestore'
 
 const JobListings = ({ isHome = false }) => {
   const [jobs, setJobs] = useState([])
@@ -11,36 +10,34 @@ const JobListings = ({ isHome = false }) => {
 
   useEffect(() => {
     const fetchJobs = async () => {
-      // const apiUrl = isHome ? '/api/jobs?_limit=3' : '/api/jobs'
-      // try {
-      //   const response = await fetch(apiUrl)
-      //   const data = await response.json()
-      //   setJobs(data)
-      // } catch (err) {
-      //   console.log(err)
-      // } finally {
-      //   setLoading(false)
-      // }
-
       try {
-        const querySnapshot = await getDocs(collection(db, 'jobs'))
-        const data = []
-
-        querySnapshot.forEach((doc) => {
-          data.push({
+        if (isHome) {
+          const q = query(collection(db, 'jobs'), limit(3))
+          const querySnapshotLimit = await getDocs(q)
+          const latestJobs = querySnapshotLimit.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
-          })
-        })
+          }))
 
-        return setJobs(data)
+          setJobs(latestJobs)
+        } else {
+          const q = query(collection(db, 'jobs'))
+          const querySnapshotLimit = await getDocs(q)
+          const latestJobs = querySnapshotLimit.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
+
+          setJobs(latestJobs)
+        }
       } catch (error) {
         console.error('Error fetching jobs: ', error)
-        return [] // Return an empty array in case of error
+        // return [] // Return an empty array in case of error
       } finally {
         setLoading(false)
       }
     }
+
     fetchJobs()
   }, [])
 
